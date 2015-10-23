@@ -35,6 +35,7 @@ ReturnAddrStack::init(unsigned _numEntries)
 {
      numEntries  = _numEntries;
      addrStack.resize(numEntries);
+     CounterStack.resize(numEntries);
      reset();
 }
 
@@ -44,29 +45,47 @@ ReturnAddrStack::reset()
     usedEntries = 0;
     tos = 0;
     for (unsigned i = 0; i < numEntries; ++i)
+    {
         addrStack[i].set(0);
+        CounterStack[i] = 0;
+    }   
+
 }
 
 void
 ReturnAddrStack::push(const TheISA::PCState &return_addr)
 {
-    incrTos();
 
-    addrStack[tos] = return_addr;
+    if(return_addr == this->top())
+    {
+        CounterStack[tos]++;
+    }
+    else
+    {  
+        incrTos();
 
-    if (usedEntries != numEntries) {
-        ++usedEntries;
+        addrStack[tos] = return_addr;
+        CounterStack[tos] = 1;
+
+        if (usedEntries != numEntries) {
+            ++usedEntries;
+        }
     }
 }
 
 void
 ReturnAddrStack::pop()
-{
-    if (usedEntries > 0) {
+{   
+    if(CounterStack[tos] != 1)
+        CounterStack[tos]--;
+    else
+    {
+        if (usedEntries > 0) {
         --usedEntries;
-    }
+        }
 
-    decrTos();
+        decrTos();
+    }
 }
 
 void
@@ -76,4 +95,5 @@ ReturnAddrStack::restore(unsigned top_entry_idx,
     tos = top_entry_idx;
 
     addrStack[tos] = restored;
+    CounterStack[tos] = 0;
 }

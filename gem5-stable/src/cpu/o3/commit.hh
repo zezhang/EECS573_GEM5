@@ -51,6 +51,7 @@
 #include "cpu/inst_seq.hh"
 #include "cpu/timebuf.hh"
 #include "sim/probe/probe.hh"
+#include "cpu/pred/ras.hh"
 
 struct DerivO3CPUParams;
 
@@ -486,6 +487,9 @@ class DefaultCommit
         a possible livelock senario.  */
     bool avoidQuiesceLiveLock;
 
+
+    /*eecs573_final_project: non-speculative return address stack */ 
+    ReturnAddrStack shadow_stack[Impl::MaxThreads];
     /** Updates commit stats based on this instruction. */
     void updateComInstStats(DynInstPtr &inst);
 

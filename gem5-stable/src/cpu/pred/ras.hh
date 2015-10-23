@@ -89,6 +89,10 @@ class ReturnAddrStack
     /** The RAS itself. */
     std::vector<TheISA::PCState> addrStack;
 
+    /*eecs573_final_project*/
+
+    std::vector<unsigned int> CounterStack;
+
     /** The number of entries in the RAS. */
     unsigned numEntries;
 

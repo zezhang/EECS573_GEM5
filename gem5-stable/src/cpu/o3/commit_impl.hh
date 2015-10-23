@@ -156,6 +156,7 @@ DefaultCommit<Impl>::DefaultCommit(O3CPU *_cpu, DerivO3CPUParams *params)
         pc[tid].set(0);
         lastCommitedSeqNum[tid] = 0;
         squashAfterInst[tid] = NULL;
+        shadow_stack[tid].init(128);
     }
     interrupt = NoFault;
 }
@@ -1132,8 +1133,11 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
 {
     assert(head_inst);
 
-    ThreadID tid = head_inst->threadNumber;
 
+    
+    ThreadID tid = head_inst->threadNumber;
+    //std::cout << (head_inst->instAddr()) << " tid:"<<head_inst->staticInst->disassemble(head_inst->instAddr())<<' '<<
+    //head_inst->nextInstAddr()<<endl;
     // If the instruction is not executed yet, then it will need extra
     // handling.  Signal backwards that it should be executed.
     if (!head_inst->isExecuted()) {
@@ -1268,9 +1272,44 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
         delete head_inst->traceData;
         head_inst->traceData = NULL;
     }
+
+    /*eecs573_final_project*/
+    if(head_inst->isCall())
+    {   
+
+        TheISA::PCState nextpc;
+        nextpc = head_inst->pcState();
+        nextpc.pc(nextpc.instAddr() + nextpc.size());
+       /* std::cout << "tid: "<<tid <<" function call: "<<std::hex<< ( nextpc.instAddr()) <<
+        ' '<<head_inst->staticInst->disassemble(head_inst->instAddr())<<endl;*/
+        if(shadow_stack[tid].full())
+        {
+             cerr << "shadow_stack in thread "<<tid << " is full" <<endl;
+             assert(0);
+        } 
+        else
+        {   
+            shadow_stack[tid].push(nextpc);
+        }
+    }
+
+    /*eecs573_final_project*/
     if (head_inst->isReturn()) {
         DPRINTF(Commit,"Return Instruction Committed [sn:%lli] PC %s \n",
                         head_inst->seqNum, head_inst->pcState());
+
+        //std::cout << "tid : " << tid<< " function return: " <<std::hex<<head_inst->instAddr()<<' '<<std::hex<< head_inst->nextInstAddr()
+        <<' '<<head_inst->staticInst->disassemble(head_inst->instAddr())<<endl;
+
+ 
+            TheISA::PCState returnPC = shadow_stack[tid].top();
+
+            if((returnPC.instAddr()) != head_inst->nextInstAddr())
+            {
+                cerr << "address mismatch! this should not happen!" <<"returnPC.instAddr()+4: " <<std::hex<<(returnPC.instAddr()) <<endl;
+                assert(0);
+            }
+            shadow_stack[tid].pop();
     }
 
     // Update the commit rename map
