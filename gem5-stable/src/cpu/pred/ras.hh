@@ -74,9 +74,18 @@ class ReturnAddrStack
      */
     void restore(unsigned top_entry_idx, const TheISA::PCState &restored);
 
-     bool empty() { return usedEntries == 0; }
+    bool empty() { return usedEntries == 0; }
 
-     bool full() { return usedEntries == numEntries; }
+    bool full() { return usedEntries == numEntries; }
+
+    /**eecs573**/
+    unsigned size() { return numEntries; }
+    unsigned int top_count() { return CounterStack[tos]; }
+    bool check_point() {return usedEntries == (numEntries / 2); }
+    void push_unit(const TheISA::PCState &return_addr, unsigned int count);
+
+
+
   private:
     /** Increments the top of stack index. */
     inline void incrTos()

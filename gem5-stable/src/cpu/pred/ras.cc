@@ -97,3 +97,17 @@ ReturnAddrStack::restore(unsigned top_entry_idx,
     addrStack[tos] = restored;
     CounterStack[tos] = 0;
 }
+
+
+void
+ReturnAddrStack::push_unit(const TheISA::PCState &return_addr, unsigned int count)
+{
+    incrTos();
+
+    addrStack[tos] = return_addr;
+    CounterStack[tos] = count;
+
+    if (usedEntries != numEntries) {
+        ++usedEntries;
+    }
+}
