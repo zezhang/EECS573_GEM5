@@ -83,6 +83,7 @@ class ReturnAddrStack
     unsigned int top_count() { return CounterStack[tos]; }
     bool check_point() {return usedEntries == (numEntries / 2); }
     void push_unit(const TheISA::PCState &return_addr, unsigned int count);
+    void pop_unit();
 
 
 
