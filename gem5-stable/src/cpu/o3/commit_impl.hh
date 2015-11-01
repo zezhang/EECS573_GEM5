@@ -1316,7 +1316,7 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
                 //simulate memory access
                 unsigned int unit_count = shadow_stack[tid].top_count();
                 temp_stack.push_unit(unit, unit_count);
-                shadow_stack[tid].pop();
+                shadow_stack[tid].pop_unit();
             }
             stored_stack.push(temp_stack);
              /*cerr << "shadow_stack in thread "<<tid << " is full" <<endl;
@@ -1343,7 +1343,7 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
                     //simulate 
                     unsigned int unit_count = stored_stack.top().top_count();
                     shadow_stack[tid].push_unit(unit, unit_count);
-                    stored_stack.top().pop();
+                    stored_stack.top().pop_unit();
                 }
                 stored_stack.pop();
             }
