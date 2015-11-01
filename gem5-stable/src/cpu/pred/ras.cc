@@ -111,3 +111,13 @@ ReturnAddrStack::push_unit(const TheISA::PCState &return_addr, unsigned int coun
         ++usedEntries;
     }
 }
+
+void
+ReturnAddrStack::pop_unit()
+{   
+     if (usedEntries > 0) {
+        --usedEntries;
+     }
+
+     decrTos();
+}
