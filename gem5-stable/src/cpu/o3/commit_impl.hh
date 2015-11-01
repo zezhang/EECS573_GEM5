@@ -158,6 +158,9 @@ DefaultCommit<Impl>::DefaultCommit(O3CPU *_cpu, DerivO3CPUParams *params)
         squashAfterInst[tid] = NULL;
         shadow_stack[tid].init(128);
     }
+
+    sstack_ptr = 0xc0000000;
+    sstack_bound = 0xd0000000;/*not sure*/
     interrupt = NoFault;
 }
 
@@ -1127,6 +1130,25 @@ DefaultCommit<Impl>::commitInsts()
     }
 }
 
+/*
+ *eecs573_final
+ *
+*/
+ template<class Impl>
+ bool
+ DefaultCommit<Impl>::recvTimingResp(PacketPtr pkt)
+ {
+    if ( pkt->isRead() )
+    {
+
+    }
+    else
+    {
+
+    }
+
+    return true;
+ }
 template <class Impl>
 bool
 DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
@@ -1299,9 +1321,19 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
                         head_inst->seqNum, head_inst->pcState());
 
         //std::cout << "tid : " << tid<< " function return: " <<std::hex<<head_inst->instAddr()<<' '<<std::hex<< head_inst->nextInstAddr()
-        <<' '<<head_inst->staticInst->disassemble(head_inst->instAddr())<<endl;
+        //<<' '<<head_inst->staticInst->disassemble(head_inst->instAddr())<<endl;
 
- 
+        /**code to send response to mem**/
+        
+        /**create packet**/
+      //  PacketPtr data_pkt = Packet::createRead(req);
+       // data_pkt->fromcommit = true;
+
+       // if(!cpu->dcachePort->sendTimingReq(fst_data_pkt));
+       // {
+            
+       // }
+            
             TheISA::PCState returnPC = shadow_stack[tid].top();
 
             if((returnPC.instAddr()) != head_inst->nextInstAddr())
@@ -1310,6 +1342,8 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
                 assert(0);
             }
             shadow_stack[tid].pop();
+
+
     }
 
     // Update the commit rename map

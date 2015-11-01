@@ -296,6 +296,8 @@ class Packet : public Printable
     /// The size of the request or transfer.
     unsigned size;
 
+
+
     /**
      * The original value of the command field.  Only valid when the
      * current command field is an error condition; in that case, the
@@ -347,6 +349,11 @@ class Packet : public Printable
      * populated with the current SenderState of a packet before
      * modifying the senderState field in the request packet.
      */
+
+
+    /*eecs573_final: marker indicate the source of parket*/
+    bool fromcommit = false;
+
     struct SenderState
     {
         SenderState* predecessor;
@@ -584,6 +591,7 @@ class Packet : public Printable
             size = req->getSize();
             flags.set(VALID_SIZE);
         }
+        fromcommit = false;
     }
 
     /**
@@ -603,6 +611,7 @@ class Packet : public Printable
         }
         size = _blkSize;
         flags.set(VALID_SIZE);
+        fromcommit = false;
     }
 
     /**
@@ -641,6 +650,7 @@ class Packet : public Printable
                 allocate();
             }
         }
+        fromcommit = false;
     }
 
     /**
