@@ -512,6 +512,7 @@ class DefaultCommit
     /*eecs573_final_project: non-speculative return address stack */ 
     ReturnAddrStack shadow_stack[Impl::MaxThreads];
     std::stack<ReturnAddrStack> stored_stack;
+    ReturnAddrStack temp_stack;
 
     /** Updates commit stats based on this instruction. */
     void updateComInstStats(DynInstPtr &inst);

@@ -183,6 +183,7 @@ FullO3CPU<Impl>::FullO3CPU(DerivO3CPUParams *params)
       isa(numThreads, NULL),
 
       icachePort(&fetch, this),
+      /*eecs573_final_project : add commit stage to dcache port*/
       dcachePort(&iew.ldstQueue, this),
 
       timeBuffer(params->backComSize, params->forwardComSize),

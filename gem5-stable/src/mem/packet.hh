@@ -351,8 +351,7 @@ class Packet : public Printable
      */
 
 
-    /*eecs573_final: marker indicate the source of parket*/
-    bool fromcommit = false;
+    
 
     struct SenderState
     {
@@ -591,7 +590,7 @@ class Packet : public Printable
             size = req->getSize();
             flags.set(VALID_SIZE);
         }
-        fromcommit = false;
+
     }
 
     /**
@@ -611,7 +610,6 @@ class Packet : public Printable
         }
         size = _blkSize;
         flags.set(VALID_SIZE);
-        fromcommit = false;
     }
 
     /**
@@ -650,7 +648,7 @@ class Packet : public Printable
                 allocate();
             }
         }
-        fromcommit = false;
+ 
     }
 
     /**
