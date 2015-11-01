@@ -161,6 +161,9 @@ DefaultCommit<Impl>::DefaultCommit(O3CPU *_cpu, DerivO3CPUParams *params)
 
     sstack_ptr = 0xc0000000;
     sstack_bound = 0xd0000000;/*not sure*/
+    simulating_memory_store = false;
+    simulating_memory_load = false;
+    isLoad_finished = true;
     interrupt = NoFault;
 }
 
@@ -1140,15 +1143,12 @@ DefaultCommit<Impl>::commitInsts()
  {
     if ( pkt->isRead() )
     {
-
-    }
-    else
-    {
-
+        isLoad_finished = true;
     }
 
     return true;
  }
+
 template <class Impl>
 bool
 DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
@@ -1306,44 +1306,62 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
         ' '<<head_inst->staticInst->disassemble(head_inst->instAddr())<<endl;*/
         if(shadow_stack[tid].full())
         {
-             cerr << "shadow_stack in thread "<<tid << " is full" <<endl;
-             assert(0);
+            //move half of the stack to memory
+            unsigned new_size = (unsigned) (shadow_stack[tid].size() / 2);
+            ReturnAddrStack temp_stack;
+            temp_stack.init(new_size);
+            for(int i = 0; i < new_size; ++i)
+            {
+                TheISA::PCState unit = shadow_stack[tid].top();
+                //simulate memory access
+                unsigned int unit_count = shadow_stack[tid].top_count();
+                temp_stack.push_unit(unit, unit_count);
+                shadow_stack[tid].pop();
+            }
+            stored_stack.push(temp_stack);
+             /*cerr << "shadow_stack in thread "<<tid << " is full" <<endl;
+             assert(0);*/
         } 
-        else
+
+        /*else
         {   
             shadow_stack[tid].push(nextpc);
-        }
+        }*/
+        shadow_stack[tid].push(nextpc);
+
     }
 
     /*eecs573_final_project*/
     if (head_inst->isReturn()) {
+        if(shadow_stack[tid].check_point())
+        {
+            if(!stored_stack.empty())
+            {
+                for(int i = 0; i < stored_stack.top().size(); ++i)
+                {
+                    TheISA::PCState unit = stored_stack.top().top();
+                    //simulate 
+                    unsigned int unit_count = stored_stack.top().top_count();
+                    shadow_stack[tid].push_unit(unit, unit_count);
+                    stored_stack.top().pop();
+                }
+                stored_stack.pop();
+            }
+        }
         DPRINTF(Commit,"Return Instruction Committed [sn:%lli] PC %s \n",
                         head_inst->seqNum, head_inst->pcState());
 
         //std::cout << "tid : " << tid<< " function return: " <<std::hex<<head_inst->instAddr()<<' '<<std::hex<< head_inst->nextInstAddr()
         //<<' '<<head_inst->staticInst->disassemble(head_inst->instAddr())<<endl;
 
-        /**code to send response to mem**/
-        
-        /**create packet**/
-      //  PacketPtr data_pkt = Packet::createRead(req);
-       // data_pkt->fromcommit = true;
+        TheISA::PCState returnPC = shadow_stack[tid].top();
 
-       // if(!cpu->dcachePort->sendTimingReq(fst_data_pkt));
-       // {
-            
-       // }
-            
-            TheISA::PCState returnPC = shadow_stack[tid].top();
-
-            if((returnPC.instAddr()) != head_inst->nextInstAddr())
-            {
-                cerr << "address mismatch! this should not happen!" <<"returnPC.instAddr()+4: " <<std::hex<<(returnPC.instAddr()) <<endl;
-                assert(0);
-            }
-            shadow_stack[tid].pop();
-
-
+        if((returnPC.instAddr()) != head_inst->nextInstAddr())
+        {
+            cerr << "address mismatch! this should not happen!" <<"returnPC.instAddr()+4: " <<std::hex<<(returnPC.instAddr()) <<endl;
+            assert(0);
+        }
+        shadow_stack[tid].pop();
     }
 
     // Update the commit rename map

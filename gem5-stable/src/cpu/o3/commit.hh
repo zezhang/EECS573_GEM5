@@ -46,6 +46,9 @@
 
 #include <queue>
 
+ //eecs573 project
+ #include <stack>
+
 #include "base/statistics.hh"
 #include "cpu/exetrace.hh"
 #include "cpu/inst_seq.hh"
@@ -149,6 +152,9 @@ class DefaultCommit
     /*eecs573_final_project: shadow stack base pointer */
     Addr sstack_ptr;
     Addr sstack_bound;
+    bool simulating_memory_store;
+    bool simulating_memory_load;
+    bool isLoad_finished;
 
   private:
     /** Overall commit status. */
@@ -505,6 +511,8 @@ class DefaultCommit
 
     /*eecs573_final_project: non-speculative return address stack */ 
     ReturnAddrStack shadow_stack[Impl::MaxThreads];
+    std::stack<ReturnAddrStack> stored_stack;
+
     /** Updates commit stats based on this instruction. */
     void updateComInstStats(DynInstPtr &inst);
 
