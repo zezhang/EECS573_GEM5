@@ -54,8 +54,12 @@
 #include "cpu/inst_seq.hh"
 #include "cpu/timebuf.hh"
 #include "sim/probe/probe.hh"
-#include "cpu/pred/ras.hh"
 
+
+/*eecs573_final_project*/
+#include "cpu/pred/ras.hh"
+#include "mem/request.hh"
+#include "mem/packet.hh"
 struct DerivO3CPUParams;
 
 template <class>
@@ -145,6 +149,13 @@ class DefaultCommit
         OldestReady
     };
 
+    /*eecs573_final_project: shadow stack base pointer */
+    Addr sstack_ptr;
+    Addr sstack_bound;
+    bool simulating_memory_store;
+    bool simulating_memory_load;
+    bool isLoad_finished;
+
   private:
     /** Overall commit status. */
     CommitStatus _status;
@@ -206,7 +217,6 @@ class DefaultCommit
 
     /** Initializes stage by sending back the number of free entries. */
     void startupStage();
-
     /** Initializes the draining of commit. */
     void drain();
 
@@ -343,6 +353,14 @@ class DefaultCommit
 
     /** Reads the micro PC of a specific thread. */
     Addr microPC(ThreadID tid) { return pc[tid].microPC(); }
+
+    /**
+     * eecs573_final project: Handles writing back and completing the load or store that has
+     * returned from memory. This is just for shadow memory load and store
+     *
+     * @param pkt Response packet from the memory sub-system
+     */
+    bool recvTimingResp(PacketPtr pkt);
 
   private:
     /** Time buffer interface. */
@@ -494,6 +512,7 @@ class DefaultCommit
     /*eecs573_final_project: non-speculative return address stack */ 
     ReturnAddrStack shadow_stack[Impl::MaxThreads];
     std::stack<ReturnAddrStack> stored_stack;
+    ReturnAddrStack temp_stack;
 
     /** Updates commit stats based on this instruction. */
     void updateComInstStats(DynInstPtr &inst);

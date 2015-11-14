@@ -299,7 +299,9 @@ class Request
           _taskId(ContextSwitchTaskId::Unknown), _asid(0), _vaddr(0),
           _extraData(0), _contextId(0), _threadId(0), _pc(0),
           translateDelta(0), accessDelta(0), depth(0)
-    {}
+    {
+                fromcommit = false;
+    }
 
     /**
      * Constructor for physical (e.g. device) requests.  Initializes
@@ -313,6 +315,7 @@ class Request
           translateDelta(0), accessDelta(0), depth(0)
     {
         setPhys(paddr, size, flags, mid, curTick());
+        fromcommit = false;
     }
 
     Request(Addr paddr, unsigned size, Flags flags, MasterID mid, Tick time)
@@ -334,6 +337,8 @@ class Request
         setPhys(paddr, size, flags, mid, time);
         privateFlags.set(VALID_PC);
         _pc = pc;
+        fromcommit = false;
+
     }
 
     Request(int asid, Addr vaddr, unsigned size, Flags flags, MasterID mid,
@@ -345,6 +350,8 @@ class Request
     {
         setVirt(asid, vaddr, size, flags, mid, pc);
         setThreadContext(cid, tid);
+        fromcommit = false;
+
     }
 
     ~Request() {}
@@ -446,6 +453,10 @@ class Request
      * (e.g. 0 = L1; 1 = L2).
      */
     mutable int depth;
+
+
+    /*eecs573_final: marker indicate the source of parket*/
+    bool fromcommit = false;
 
     /**
      *  Accessor for size.

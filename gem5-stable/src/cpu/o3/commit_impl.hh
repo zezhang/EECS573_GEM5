@@ -158,6 +158,12 @@ DefaultCommit<Impl>::DefaultCommit(O3CPU *_cpu, DerivO3CPUParams *params)
         squashAfterInst[tid] = NULL;
         shadow_stack[tid].init(128);
     }
+
+    sstack_ptr = 0xc0000000;
+    sstack_bound = 0xd0000000;/*not sure*/
+    simulating_memory_store = false;
+    simulating_memory_load = false;
+    isLoad_finished = true;
     interrupt = NoFault;
 }
 
@@ -1127,6 +1133,22 @@ DefaultCommit<Impl>::commitInsts()
     }
 }
 
+/*
+ *eecs573_final
+ *
+*/
+ template<class Impl>
+ bool
+ DefaultCommit<Impl>::recvTimingResp(PacketPtr pkt)
+ {
+    if ( pkt->isRead() )
+    {
+        isLoad_finished = true;
+    }
+
+    return true;
+ }
+
 template <class Impl>
 bool
 DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
@@ -1274,6 +1296,9 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
     }
 
     /*eecs573_final_project*/
+
+    static unsigned int tempt_stack_size;
+
     if(head_inst->isCall())
     {   
 
@@ -1285,20 +1310,74 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
         if(shadow_stack[tid].full())
         {
             //move half of the stack to memory
-            unsigned new_size = (unsigned) (shadow_stack[tid].size() / 2);
-            ReturnAddrStack temp_stack;
-            temp_stack.init(new_size);
-            for(int i = 0; i < new_size; ++i)
+            tempt_stack_size = 0;
+            temp_stack.init(shadow_stack[tid].size() / 2);
+            temp_stack.reset();
+
+            while(tempt_stack_size != (unsigned) (shadow_stack[tid].size() / 2))
             {
                 TheISA::PCState unit = shadow_stack[tid].top();
-                unsigned int unit_count = shadow_stack[tid].top_count();
-                temp_stack.push_unit(unit, unit_count);
-                shadow_stack[tid].pop();
+                //simulate memory access
+                Request *req =  new Request(tid, sstack_ptr, 4, Request::PRIVILEGED, cpu->dataMasterId(), head_inst->instAddr(),
+                cpu->thread[tid]->contextId(), tid);
+                req->fromcommit = true;
+                PacketPtr data_pkt =  Packet::createWrite(req);
+                
+
+                if(!cpu->getDataPort().sendTimingReq(data_pkt))
+                {   
+                    simulating_memory_store = true;
+                    delete data_pkt;
+                    return false;
+                }
+                else
+                {
+                     unsigned int unit_count = shadow_stack[tid].top_count();
+                    temp_stack.push_unit(unit, unit_count);
+                    sstack_ptr += 4;
+                    shadow_stack[tid].pop_unit();
+                }
+               
             }
+
             stored_stack.push(temp_stack);
+            simulating_memory_store = false;
+            tempt_stack_size = 0;
              /*cerr << "shadow_stack in thread "<<tid << " is full" <<endl;
              assert(0);*/
         } 
+
+        else if (simulating_memory_store)
+        {
+             while(tempt_stack_size != (unsigned) (shadow_stack[tid].size() / 2))
+            {
+                TheISA::PCState unit = shadow_stack[tid].top();
+                //simulate memory access
+                Request *req =  new Request(tid, sstack_ptr, 4, Request::PRIVILEGED, cpu->dataMasterId(), head_inst->instAddr(),
+                cpu->thread[tid]->contextId(), tid);
+                req->fromcommit = true;
+                PacketPtr data_pkt =  Packet::createWrite(req);
+
+                if(!cpu->getDataPort().sendTimingReq(data_pkt))
+                {   
+                    simulating_memory_store = true;
+                    delete data_pkt;
+                    return false;
+                }
+                else
+                {
+                    unsigned int unit_count = shadow_stack[tid].top_count();
+                    temp_stack.push_unit(unit, unit_count);
+                    sstack_ptr += 4;
+                    shadow_stack[tid].pop_unit();
+                }
+            }
+            
+            stored_stack.push(temp_stack);
+            simulating_memory_store = false;
+            tempt_stack_size = 0;
+        }
+
         /*else
         {   
             shadow_stack[tid].push(nextpc);
@@ -1309,27 +1388,62 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
 
     /*eecs573_final_project*/
     if (head_inst->isReturn()) {
+
+
+        if ( !isLoad_finished )
+            return false;
+
         if(shadow_stack[tid].check_point())
         {
             if(!stored_stack.empty())
-            {
-                for(int i = 0; i < stored_stack.top().size(); ++i)
-                {
-                    TheISA::PCState unit = stored_stack.top().top();
-                    unsigned int unit_count = stored_stack.top().top_count();
-                    shadow_stack[tid].push_unit(unit, unit_count);
-                    stored_stack.top().pop();
-                }
-                stored_stack.pop();
+            {   
+                simulating_memory_load = true;
+                //simulate load access
+                Request *req =  new Request(tid, sstack_ptr, 4, Request::PRIVILEGED, cpu->dataMasterId(), head_inst->instAddr(),
+                cpu->thread[tid]->contextId(), tid);
+                req->fromcommit = true;
+                PacketPtr data_pkt =  Packet::createRead(req);
+                if (cpu->getDataPort().sendTimingReq(data_pkt))
+                    isLoad_finished = false;
+
+                /*TheISA::PCState unit = stored_stack.top().top(); 
+                unsigned int unit_count = stored_stack.top().top_count();
+                shadow_stack[tid].push_unit(unit, unit_count);
+                stored_stack.top().pop_unit();
+                sstack_ptr -= 4;
+                */
+                
             }
+
+            return false;
         }
+        else if (simulating_memory_load)
+        {   
+            if (!stored_stack.top().empty())
+            {
+                 Request *req =  new Request(tid, sstack_ptr, 4, Request::PRIVILEGED, cpu->dataMasterId(), head_inst->instAddr(),
+                 cpu->thread[tid]->contextId(), tid);
+                 req->fromcommit = true;
+                 PacketPtr data_pkt =  Packet::createRead(req); 
+
+                 if (cpu->getDataPort().sendTimingReq(data_pkt))
+                    isLoad_finished = false;
+            }
+            else
+            {    
+                stored_stack.pop();
+                simulating_memory_load = false;
+            }
+
+            return false;
+        }
+
         DPRINTF(Commit,"Return Instruction Committed [sn:%lli] PC %s \n",
                         head_inst->seqNum, head_inst->pcState());
 
         //std::cout << "tid : " << tid<< " function return: " <<std::hex<<head_inst->instAddr()<<' '<<std::hex<< head_inst->nextInstAddr()
         //<<' '<<head_inst->staticInst->disassemble(head_inst->instAddr())<<endl;
 
- 
         TheISA::PCState returnPC = shadow_stack[tid].top();
 
         if((returnPC.instAddr()) != head_inst->nextInstAddr())
