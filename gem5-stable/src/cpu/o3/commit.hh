@@ -60,6 +60,8 @@
 #include "cpu/pred/ras.hh"
 #include "mem/request.hh"
 #include "mem/packet.hh"
+#include "arch/generic/tlb.hh"
+#include "cpu/translation.hh"
 struct DerivO3CPUParams;
 
 template <class>
@@ -150,12 +152,25 @@ class DefaultCommit
     };
 
     /*eecs573_final_project: shadow stack base pointer */
-    Addr sstack_ptr;
-    Addr sstack_bound;
+    //Addr sstack_ptr;
+    //Addr sstack_bound;
+    unsigned int simulate_store_cycle;
+    unsigned int simulate_load_cycle;
     bool simulating_memory_store;
     bool simulating_memory_load;
     bool isLoad_finished;
 
+
+    unsigned int commit_load;
+    unsigned int commit_store;
+
+    unsigned int store_delayed_cycle;
+    unsigned int load_delayed_cycle;
+    bool begin_translation;
+    bool translation_finish;
+    bool IsTLBFault;
+    RequestPtr savedReq;
+    Fault fault;
   private:
     /** Overall commit status. */
     CommitStatus _status;
@@ -361,7 +376,24 @@ class DefaultCommit
      * @param pkt Response packet from the memory sub-system
      */
     bool recvTimingResp(PacketPtr pkt);
+    inline void finishTranslation(WholeTranslationState *state)
+    {
+        fault = state->getFault();
 
+        if (fault == NoFault) {
+            IsTLBFault = false;
+        } else {
+            IsTLBFault = true;
+            state->deleteReqs();
+        }
+        delete state;
+
+        translation_finish = true;
+    }
+    inline bool isSquashed()
+    {
+        return false;
+    }
   private:
     /** Time buffer interface. */
     TimeBuffer<TimeStruct> *timeBuffer;
