@@ -1292,7 +1292,7 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
         return false;
     }
 
-    updateComInstStats(head_inst);
+    
 
     if (FullSystem) {
         if (thread[tid]->profile) {
@@ -1329,7 +1329,7 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
         TheISA::PCState nextpc;
         nextpc = head_inst->pcState();
         nextpc.pc(nextpc.instAddr() + nextpc.size());
-       /* std::cout << "tid: "<<tid <<" function call: "<<std::hex<< ( nextpc.instAddr()) <<
+       /*std::cout << "tid: "<<tid <<" function call: "<<std::hex<< ( nextpc.instAddr()) <<
         ' '<<head_inst->staticInst->disassemble(head_inst->instAddr())<<endl;*/
         if(shadow_stack[tid].full() || simulating_memory_store )
         {
@@ -1437,8 +1437,8 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
         DPRINTF(Commit,"Return Instruction Committed [sn:%lli] PC %s \n",
                         head_inst->seqNum, head_inst->pcState());
 
-        //std::cout << "tid : " << tid<< " function return: " <<std::hex<<head_inst->instAddr()<<' '<<std::hex<< head_inst->nextInstAddr()
-        //<<' '<<head_inst->staticInst->disassemble(head_inst->instAddr())<<endl;
+        /*std::cout << "tid : " << tid<< " function return: " <<std::hex<<head_inst->instAddr()<<' '<<std::hex<< head_inst->nextInstAddr()
+        <<' '<<head_inst->staticInst->disassemble(head_inst->instAddr())<<endl;*/
 
         TheISA::PCState returnPC = shadow_stack[tid].top();
         if((returnPC.instAddr()) != head_inst->nextInstAddr())
@@ -1454,7 +1454,7 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
         renameMap[tid]->setEntry(head_inst->flattenedDestRegIdx(i),
                                  head_inst->renamedDestRegIdx(i));
     }
-
+    updateComInstStats(head_inst);
     // Finally clear the head ROB entry.
     rob->retireHead(tid);
 
