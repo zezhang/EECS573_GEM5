@@ -1323,14 +1323,15 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
     /*eecs573_final_project*/
 
     static unsigned int tempt_stack_size;
-
+    std::cout << "tid: "<<tid <<" commit: "<<std::hex<< ( head_inst->pcState().instAddr()) <<
+        ' '<<head_inst->staticInst->disassemble(head_inst->instAddr())<<endl;   
     if(head_inst->isCall())
     {   
         TheISA::PCState nextpc;
         nextpc = head_inst->pcState();
-        nextpc.pc(nextpc.instAddr() + nextpc.size());
-       /*std::cout << "tid: "<<tid <<" function call: "<<std::hex<< ( nextpc.instAddr()) <<
-        ' '<<head_inst->staticInst->disassemble(head_inst->instAddr())<<endl;*/
+        //nextpc.pc(nextpc.instAddr() + nextpc.size());
+       //std::cout << "tid: "<<tid <<" function call: "<<std::hex<< ( nextpc.instAddr()) <<
+        //' '<<head_inst->staticInst->disassemble(head_inst->instAddr())<<endl;   
         if(shadow_stack[tid].full() || simulating_memory_store )
         {
             //move half of the stack to memory
@@ -1443,8 +1444,15 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
         TheISA::PCState returnPC = shadow_stack[tid].top();
         if((returnPC.instAddr()) != head_inst->nextInstAddr())
         {
-            cerr << "address mismatch! this should not happen!" <<"returnPC.instAddr()+4: " <<std::hex<<(returnPC.instAddr()) <<endl;
-            assert(0);
+            cerr << "address mismatch! this should not happen!" <<"returnPC shoud be: " <<std::hex<<(returnPC.instAddr() + returnPC.size()) <<endl;
+            TheISA::PCState target;
+
+            target = TheISA::buildRetPC(head_inst->pcState(), returnPC);
+            cpu->pcState(target,tid);
+            cpu->fetch.resetStage();
+            cpu->decode.squash(tid);
+            rob->squash(head_inst->seqNum-1,tid);
+            //assert(0);
         }
         shadow_stack[tid].pop();
     }
