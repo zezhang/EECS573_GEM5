@@ -1226,6 +1226,7 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
         head_inst->setCompleted();
     }
 
+     //cout << head_inst->staticInst<<endl;
     if (inst_fault != NoFault) {
         DPRINTF(Commit, "Inst [sn:%lli] PC %s has a fault\n",
                 head_inst->seqNum, head_inst->pcState());
@@ -1323,8 +1324,8 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
     /*eecs573_final_project*/
 
     static unsigned int tempt_stack_size;
-    std::cout << "tid: "<<tid <<" commit: "<<std::hex<< ( head_inst->pcState().instAddr()) <<
-        ' '<<head_inst->staticInst->disassemble(head_inst->instAddr())<<endl;   
+  //  std::cout << "tid: "<<tid <<" commit: "<<std::hex<< ( head_inst->pcState().instAddr()) <<
+   //     ' '<<head_inst->staticInst->disassemble(head_inst->instAddr())<<endl;   
     if(head_inst->isCall())
     {   
         TheISA::PCState nextpc;
@@ -1442,16 +1443,19 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
         <<' '<<head_inst->staticInst->disassemble(head_inst->instAddr())<<endl;*/
 
         TheISA::PCState returnPC = shadow_stack[tid].top();
-        if((returnPC.instAddr()) != head_inst->nextInstAddr())
+        if((returnPC.instAddr() + returnPC.size()) != head_inst->nextInstAddr())
         {
             cerr << "address mismatch! this should not happen!" <<"returnPC shoud be: " <<std::hex<<(returnPC.instAddr() + returnPC.size()) <<endl;
             TheISA::PCState target;
-
+            //target = returnPC;  
             target = TheISA::buildRetPC(head_inst->pcState(), returnPC);
+            target.pc(returnPC.instAddr() + returnPC.size());
+            //cout <<"target pc is "<< target.instAddr() << endl;
             cpu->pcState(target,tid);
-            cpu->fetch.resetStage();
-            cpu->decode.squash(tid);
             rob->squash(head_inst->seqNum-1,tid);
+            cpu->fetch.resetStage();
+            //cpu->decode.squash(tid);
+            
             //assert(0);
         }
         shadow_stack[tid].pop();

@@ -1161,10 +1161,11 @@ DefaultFetch<Impl>::fetch(bool &status_change)
 
     // The current PC.
     TheISA::PCState thisPC = pc[tid];
-    cout<<"atempt to fetch from :" << thisPC.instAddr() << endl;
+    //cout<<"atempt to fetch from :" << thisPC.instAddr() << endl;
     Addr pcOffset = fetchOffset[tid];
     Addr fetchAddr = (thisPC.instAddr() + pcOffset) & BaseCPU::PCMask;
 
+    //cout << "here "<< fetchAddr<<' '<< pcOffset<< endl;
     bool inRom = isRomMicroPC(thisPC.microPC());
 
     // If returning from the delay of a cache miss, then update the status
@@ -1214,6 +1215,8 @@ DefaultFetch<Impl>::fetch(bool &status_change)
         return;
     }
 
+    //cout<<"reach here ! "<<endl;
+
     ++fetchCycles;
 
     TheISA::PCState nextPC = thisPC;
@@ -1240,7 +1243,7 @@ DefaultFetch<Impl>::fetch(bool &status_change)
 
     const unsigned numInsts = fetchBufferSize / instSize;
     unsigned blkOffset = (fetchAddr - fetchBufferPC[tid]) / instSize;
-
+    //cout<<"have fecthed "<<numInsts<<endl;
     // Loop through instruction memory from the cache.
     // Keep issuing while fetchWidth is available and branch is not
     // predicted taken

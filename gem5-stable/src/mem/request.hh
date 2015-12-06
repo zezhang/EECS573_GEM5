@@ -456,7 +456,7 @@ class Request
 
 
     /*eecs573_final: marker indicate the source of parket*/
-    bool fromcommit = false;
+    bool fromcommit;
 
     /**
      *  Accessor for size.
