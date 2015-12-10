@@ -1161,7 +1161,7 @@ DefaultFetch<Impl>::fetch(bool &status_change)
 
     // The current PC.
     TheISA::PCState thisPC = pc[tid];
-    //cout<<"atempt to fetch from :" << thisPC.instAddr() << endl;
+    cout<<"atempt to fetch from :" << thisPC.instAddr() << endl;
     Addr pcOffset = fetchOffset[tid];
     Addr fetchAddr = (thisPC.instAddr() + pcOffset) & BaseCPU::PCMask;
 
