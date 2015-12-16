@@ -5,7 +5,7 @@ This is a shadow stack implementation based on Gem5.
 
 Gem5-stable file contains our modification to gem5 simulator.
 
-Test_case file contains the programs that overwrite return address during execution
+Test_case file contains the sample programs that overwrite the return address during execution
 
 -----------------------------
 1. Build Gem5:
