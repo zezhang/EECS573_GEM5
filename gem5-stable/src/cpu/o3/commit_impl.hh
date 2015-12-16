@@ -1165,11 +1165,11 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
     assert(head_inst);
 
 
-    cout << std::hex << head_inst->instAddr() << ' ' << head_inst->staticInst->disassemble(head_inst->instAddr())<<endl;
+    //cout << std::hex << head_inst->instAddr() << ' ' << head_inst->staticInst->disassemble(head_inst->instAddr())<<endl;
  
     ThreadID tid = head_inst->threadNumber;
-       cout <<cpu->readArchIntReg(X86ISA::INTREG_RBP,tid) << endl;
-    cout <<cpu->readArchIntReg(X86ISA::INTREG_RSP,tid) << endl;
+      // cout <<cpu->readArchIntReg(X86ISA::INTREG_RBP,tid) << endl;
+    //cout <<cpu->readArchIntReg(X86ISA::INTREG_RSP,tid) << endl;
     // If the instruction is not executed yet, then it will need extra
     // handling.  Signal backwards that it should be executed.
     if (!head_inst->isExecuted()) {
